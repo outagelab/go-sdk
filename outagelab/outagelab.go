@@ -1,29 +1,12 @@
 package outagelab
 
 import (
-	"bytes"
-	"encoding/json"
-	"io"
-	"net/http"
-	"time"
-
-	"github.com/outagelab/go-sdk/internal/models"
+	"fmt"
+	"sync"
 )
 
-type outageLabClient struct {
-	options     Options
-	accountData *models.Account
-}
-
-func NewClient(options Options) *outageLabClient {
-	client := &outageLabClient{
-		options: options,
-	}
-
-	client.init()
-
-	return client
-}
+var defaultClient *outageLabClient
+var mu sync.Mutex
 
 type Options struct {
 	Application string
@@ -32,53 +15,27 @@ type Options struct {
 	Host        string
 }
 
-func (olc *outageLabClient) init() {
-	http.DefaultTransport = olc.NewTransport(http.DefaultTransport)
-	go olc.pollLoop()
-}
+func Start(options Options) {
+	if options.ApiKey == "" {
+		fmt.Println("outagelab API key missing, skipping initialization")
+		return
+	}
 
-func (olc *outageLabClient) pollLoop() {
-	for true {
-		olc.accountData = getAccountData(&olc.options)
-		time.Sleep(5 * time.Second)
+	mu.Lock()
+	defer mu.Unlock()
+
+	if defaultClient == nil {
+		defaultClient = newClient(options)
+		defaultClient.start()
 	}
 }
 
-func getAccountData(options *Options) *models.Account {
-	reqJson, err := json.Marshal(map[string]string{
-		"application": options.Application,
-		"environment": options.Environment,
-	})
-	if err != nil {
-		return nil
+func Stop() {
+	mu.Lock()
+	defer mu.Unlock()
+
+	if defaultClient != nil {
+		defaultClient.stop()
+		defaultClient = nil
 	}
-
-	req, err := http.NewRequest("POST", options.Host+"/api/datapage", bytes.NewBuffer(reqJson))
-	if err != nil {
-		return nil
-	}
-
-	req.Header["x-api-key"] = []string{options.ApiKey}
-
-	res, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return nil
-	}
-
-	resJson, err := io.ReadAll(res.Body)
-	if err != nil {
-		return nil
-	}
-
-	var account models.Account
-	err = json.Unmarshal(resJson, &account)
-	if err != nil {
-		return nil
-	}
-
-	return &account
-}
-
-func (olc *outageLabClient) NewTransport(transport http.RoundTripper) http.RoundTripper {
-	return newTransport(transport, olc)
 }

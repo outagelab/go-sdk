@@ -10,12 +10,13 @@ import (
 )
 
 func main() {
-	outagelab.NewClient(outagelab.Options{
-		Application: "reviews-service",
+	outagelab.Start(outagelab.Options{
+		Application: "my-service",
 		Environment: "local",
 		ApiKey:      os.Getenv("OUTAGELAB_API_KEY"),
-		Host:        "https://app.outagelab.com",
+		Host:        "http://localhost:8080",
 	})
+	defer outagelab.Stop()
 
 	for true {
 		cnt += 1

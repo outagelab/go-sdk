@@ -6,8 +6,6 @@ import (
 	"io"
 	"net/http"
 	"time"
-
-	"github.com/outagelab/go-sdk/internal/models"
 )
 
 type outageLabTransport struct {
@@ -26,7 +24,7 @@ func newTransport(
 }
 
 func (olt *outageLabTransport) RoundTrip(req *http.Request) (*http.Response, error) {
-	rule := olt.getOutageRule(req)
+	rule := olt.getHttpClientOutageRule(req)
 
 	if rule == nil {
 		return olt.wrappedTransport.RoundTrip(req)
@@ -55,41 +53,22 @@ func (olt *outageLabTransport) RoundTrip(req *http.Request) (*http.Response, err
 	return res, nil
 }
 
-func (olt *outageLabTransport) getOutageRule(req *http.Request) *models.OutageRule {
+func (olt *outageLabTransport) getHttpClientOutageRule(req *http.Request) *httpClientRequestV1 {
 	client := olt.outageLabClient
-	options := client.options
 
-	account := client.accountData
-	if account == nil {
+	datapage := client.datapage
+	if datapage == nil {
 		return nil
 	}
 
-	var application *models.Application
-	for _, app := range account.Applications {
-		if app.ID == options.Application {
-			application = app
-		}
-	}
-
-	if application == nil {
-		return nil
-	}
-
-	var environment *models.Environment
-	for _, env := range application.Environments {
-		if env.ID == options.Environment && env.Enabled {
-			environment = env
-		}
-	}
-
-	if environment == nil {
-		return nil
-	}
-
-	var outageRule *models.OutageRule
-	for _, rule := range application.Rules {
-		if rule.Host == req.Host && rule.Enabled {
-			outageRule = rule
+	var outageRule *httpClientRequestV1
+	for _, rule := range datapage.Rules {
+		switch rule.Type {
+		case "http-client-request.v1":
+			rule := rule.HttpClientRequestV1
+			if rule.Host == req.Host {
+				outageRule = rule
+			}
 		}
 	}
 
