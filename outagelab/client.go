@@ -52,7 +52,7 @@ func (olc *outageLabClient) pollLoop(ctx context.Context) {
 
 	for {
 		select {
-		case <-time.After(30 * time.Second):
+		case <-time.After(5 * time.Second):
 			datapage, err = getDataPage(ctx, &olc.options)
 			olc.datapage = datapage
 		case <-ctx.Done():
