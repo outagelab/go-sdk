@@ -1,6 +1,8 @@
 name: Publish version
 on:
   push:
+    paths:
+      - version
     branches:
       - main
 jobs:
@@ -14,7 +16,7 @@ jobs:
           TAG=$(cat version)
           if git show-ref --tags --verify --quiet "refs/tags/${TAG}"; then
             echo Tag $TAG already exists
-            exit
+            exit 1
           fi
 
           git tag $TAG HEAD
