@@ -44,7 +44,7 @@ func (olc *outageLabClient) stop() {
 func (olc *outageLabClient) pollLoop(ctx context.Context) {
 	datapage, err := getDataPage(ctx, &olc.options)
 	if err != nil {
-		fmt.Printf("outagelab initialization skipped due to error: %v\n", err)
+		fmt.Printf("outagelab: initialization skipped due to error: %v\n", err)
 		olc.stop()
 		return
 	}

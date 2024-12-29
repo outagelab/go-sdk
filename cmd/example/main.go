@@ -14,7 +14,6 @@ func main() {
 		Application: "my-service",
 		Environment: "local",
 		ApiKey:      os.Getenv("OUTAGELAB_API_KEY"),
-		Host:        "http://localhost:8080",
 	})
 	defer outagelab.Stop()
 

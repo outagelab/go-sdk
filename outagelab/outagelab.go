@@ -17,8 +17,11 @@ type Options struct {
 
 func Start(options Options) {
 	if options.ApiKey == "" {
-		fmt.Println("outagelab API key missing, skipping initialization")
+		fmt.Println("outagelab: API key missing, skipping initialization")
 		return
+	}
+	if options.Host == "" {
+		options.Host = "https://app.outagelab.com"
 	}
 
 	mu.Lock()
